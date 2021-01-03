@@ -1,6 +1,6 @@
 # joystick
 
-# Discontinued, circle center correction doesn't work!!
+### Discontinued, circle center correction doesn't work!!
 
 ## Installation
 npm:
