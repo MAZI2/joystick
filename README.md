@@ -1,4 +1,4 @@
-# joystick-like seletion component
+# Joystick-like selection component
 
 ### Discontinued, circle center correction doesn't work!!
 
