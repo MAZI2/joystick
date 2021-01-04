@@ -1,12 +1,24 @@
-# Joystick-like selection component
+# testing_environment
 
-### Discontinued, circle center correction doesn't work!!
-
-## Installation
-npm:
-```shell
-$ npm install @mazi1/joystick
+## Project setup
 ```
-## Documentation
-A joysick-like selection component. 
+yarn install
+```
 
+### Compiles and hot-reloads for development
+```
+yarn serve
+```
+
+### Compiles and minifies for production
+```
+yarn build
+```
+
+### Lints and fixes files
+```
+yarn lint
+```
+
+### Customize configuration
+See [Configuration Reference](https://cli.vuejs.org/config/).
