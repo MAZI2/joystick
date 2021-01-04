@@ -1,21 +1,20 @@
 <template>
-  <div id="dJ" class="draggable-joystick" @mousedown="startDrag" @mouseup="stopDrag" @mousemove="move" >
-    <svg id="bruh" width = "500px" height = "500px">
+  <div @mousedown="startDrag" @mouseup="stopDrag" @mousemove="move" >
+    <svg>
       <path :d="bezierPath" :fill="color" :visibility="intccl1"/>
       <path :d="bezierPath1" :fill="color" :visibility="intccl1"/>
       <path :d="circle" :fill="color" />
       <circle :cx="x1" :cy="y1" :r="width" :fill="color" :visibility="intccl"/>
       <path :d="triangle" :fill="color" />
-      <line :x1="X" :y1="Y" :x2="Xs" :y2="Ys" :stroke="color" stroke-width="1" :visibility="intccl1"/>
-      <line :x1="X" :y1="Y" :x2="c.c3x" :y2="c.c3y" :stroke="color" stroke-width="1" :visibility="intccl1"/>
-      <line :x1="c.c3x" :y1="c.c3y" :x2="Xs" :y2="Ys" :stroke="color" stroke-width="1" :visibility="intccl1"/>
+      <line :x1="X" :y1="Y" :x2="Xs" :y2="Ys" :stroke="color" :visibility="intccl1"/>
+      <line :x1="X" :y1="Y" :x2="c.c3x" :y2="c.c3y" :stroke="color" :visibility="intccl1"/>
+      <line :x1="c.c3x" :y1="c.c3y" :x2="Xs" :y2="Ys" :stroke="color" :visibility="intccl1"/>
 
       <circle v-for="entry in entries" v-bind:key="entry.count" :cx="entry.x" :cy="entry.y" :r="entry.r" :fill="color" :opacity="entry.opacity"/>
-      <text v-for="entry in entries" v-bind:key="entry.count" :x="entry.x" :y="entry.y + 5" text-anchor="middle" :font-size="fontSize">{{entry.value}}</text>
+      <text v-for="entry in entries" v-bind:key="entry.count" :x="entry.x" :y="entry.y + 5" :font-size="fontSize">{{entry.value}}</text>
     </svg>
   
-  <p>Selected:</p>
-  {{selected}}
+  <p class="selected">Selected: {{selected}} </p>
   
   </div>
 </template>
@@ -24,15 +23,11 @@
 import dynamics from 'dynamics.js'
 import $ from 'jquery'
 
-//number of entries
-var num = 6;
-//width of entries circle
-var width = 200;
-
-var angle = (2 * Math.PI)/(num); 
 var count = 0;
 
-function Dot(x1, y1) {
+function Dot(x1, y1, num, width) {
+  var angle = (2 * Math.PI)/(num); 
+
   this.angle = angle * count;
   count++;
   this.i = count;
@@ -46,37 +41,41 @@ function Dot(x1, y1) {
 export default {
   name: 'Joystick',
 
-  created () {    
-    for (var i = 0; i < num; i++) {
-      this.entries[i] = new Dot(this.x1, this.y1)
+  created () {      
+    for (var i = 0; i < this.number_of_points; i++) {
+      this.entries[i] = new Dot(this.x1, this.y1, this.number_of_points, this.width_points_circle)
+      this.entries[i].value = this.entry_props[i].value;
+      this.entries[i].linkurl = this.entry_props[i].linkurl;
     }
+    var circleWidth = this.circle_width
+    var fontSize = this.font_size
+
     dynamics.animate(this, {
-      //width of center circle
-      width: 50,
-      //font size of entries
-      fontSize: 15
+      width: circleWidth,
+      fontSize: fontSize
     }, {
       type: dynamics.easeOut,
       duration: 350,
       friction: 1
     })
   
-    //here add entries and lin urls as so
-    this.entries[0].value = "Cute Cat!"
-    this.entries[0].linkurl = "https://cdnuploads.aa.com.tr/uploads/Contents/2020/05/14/thumbs_b_c_88bedbc66bb57f0e884555e8250ae5f9.jpg?v=140708"
-    this.entries[1].value = "Entry 2"
-    this.entries[2].value = "Entry 3"
-    this.entries[3].value = "Entry 4"
-    this.entries[4].value = "Entry 5"
-    this.entries[5].value = "Entry 6"
-  
     window.addEventListener('scroll', this.scrolldistance);
   },
   unmounted () {
     window.removeEventListener('scroll', this.scrolldistance);
   },
+  props: {
+    number_of_points: Number,
+    color: String,
+    width_points_circle: Number,
+    entry_props: Array,
+    circle_width: Number,
+    font_size: Number
+  },
   data: function () {
     return {
+      status: "",
+
       dragging: false,
       intccl: 'visible',
       intccl1: 'hidden',
@@ -87,9 +86,12 @@ export default {
       x1: 250,
       y1: 250,
       width: 0,
-      color: '#ff9933',
+      //side circle point
+      X: 250,
+      Y: 250,
 
       entries: [],
+
       selection: 0,
       selected: '',
 
@@ -99,10 +101,6 @@ export default {
       B: {x: 0, y: 0},
       C: {x: 0, y: 0},
 
-      //side circle point
-      X: 250,
-      Y: 250,
-      
       //pointer location
       x2: 0,
       y2: 0,
@@ -114,8 +112,8 @@ export default {
       lock: false,
       leng: 0,
 
-      distanceX: 0,
-      distanceY: 0,
+      scrollDistanceX: 0,
+      scrollDistanceY: 0,
     }
   },
   computed: {
@@ -135,8 +133,8 @@ export default {
   methods: {
     move: function (e) {   
 
-      this.x2 = e.clientX + this.distanceX - $('svg').offset().left;
-      this.y2 = e.clientY + this.distanceY - $('svg').offset().top ; 
+      this.x2 = e.clientX + this.scrollDistanceX - $('svg').offset().left;
+      this.y2 = e.clientY + this.scrollDistanceY - $('svg').offset().top ; 
 
       if (this.dragging && !this.lock) { 
         //initial visibility
@@ -171,13 +169,13 @@ export default {
           this.stopDrag()
         }
 
-        for (var i = 0; i < num; i++) {
+        for (var i = 0; i < this.number_of_points; i++) {
           var x = this.entries[i].x + this.entries[i].y - this.y1
           var y = this.entries[i].y - this.entries[i].x + this.x1
       
           var distance1 = Math.abs((y - this.entries[i].y)*this.c.c3x - (x - this.entries[i].x)*this.c.c3y + x*this.entries[i].y - y*this.entries[i].x) / Math.sqrt(Math.pow(y - this.entries[i].y, 2) + Math.pow(x - this.entries[i].x, 2))
 
-          if (distance1 <= width + 5) {
+          if (distance1 <= this.width_points_circle + 5) {
             var distance = Math.abs((this.entries[i].y - this.y1)*this.c.c3x - (this.entries[i].x - this.x1)*this.c.c3y + this.entries[i].x*this.y1 - this.entries[i].y*this.x1) / Math.sqrt(Math.pow(this.entries[i].y - this.y1, 2) + Math.pow(this.entries[i].x - this.x1, 2))
             this.entries[i].r = this.leng / 2 / Math.max(distance/40, 1) 
           } else {
@@ -187,12 +185,14 @@ export default {
           this.entries[i].opacity = this.entries[i].r/this.width
         }   
       }
+      this.status = this.number_of_points;
     },
     findAngle: function(A,B,C) {
-    var AB = Math.sqrt(Math.pow(B.x-A.x,2)+ Math.pow(B.y-A.y,2));    
-    var BC = Math.sqrt(Math.pow(B.x-C.x,2)+ Math.pow(B.y-C.y,2)); 
-    var AC = Math.sqrt(Math.pow(C.x-A.x,2)+ Math.pow(C.y-A.y,2));
-    return Math.acos((BC*BC+AB*AB-AC*AC)/(2*BC*AB));
+      var AB = Math.sqrt(Math.pow(B.x-A.x,2)+ Math.pow(B.y-A.y,2));    
+      var BC = Math.sqrt(Math.pow(B.x-C.x,2)+ Math.pow(B.y-C.y,2)); 
+      var AC = Math.sqrt(Math.pow(C.x-A.x,2)+ Math.pow(C.y-A.y,2));
+      
+      return Math.acos((BC*BC+AB*AB-AC*AC)/(2*BC*AB));
     },
     startDrag: function () {
       this.len = Math.sqrt(Math.pow((this.nx), 2) + Math.pow((this.ny), 2))
@@ -227,7 +227,7 @@ export default {
           friction: 280
         })
 
-        for (var i = 0; i < num; i++) {
+        for (var i = 0; i < this.number_of_points; i++) {
           dynamics.animate(this.entries[i], {
             r: 0,
             opacity: 0
@@ -238,8 +238,8 @@ export default {
           })
         }
       
-        if (leng > width / 4) {
-          this.A.x = width + this.x1; 
+        if (leng > this.width_points_circle / 4) {
+          this.A.x = this.width_points_circle + this.x1; 
           this.A.y = this.y1;
           this.B.x = this.x1;
           this.B.y = this.y1;
@@ -253,7 +253,7 @@ export default {
             this.angle = 360 - this.findAngle(this.A, this.B, this.C) * (180/Math.PI)
           }
       
-          this.selection = Math.floor(this.angle/(360/num))
+          this.selection = Math.floor(this.angle/(360/this.number_of_points))
           this.selected = this.entries[this.selection].value
         
           if (this.entries[this.selection].linkurl) {
@@ -272,8 +272,8 @@ export default {
         var endy = window.pageYOffset;
         var endx = window.pageXOffset;
         
-        this.distanceX = (endx - this.startx);
-        this.distanceY = (endy - this.starty);
+        this.scrollDistanceX = (endx - this.startx);
+        this.scrollDistanceY = (endy - this.starty);
       }, 66);
     }
   }
@@ -286,5 +286,18 @@ div {
   height: 600px;
   width: 600px;
   font-family: 'B612';
+}
+svg {
+  width: 500px; 
+  height: 500px;
+}
+.selected {
+  font-size: 18px;
+}
+text {
+  text-anchor: middle;
+}
+line {
+  stroke-width: 1px;
 }
 </style>
