@@ -1,6 +1,6 @@
 # Joystick-like selection component
 
-##npm:
+## npm:
 ```bash
 npm i @mazi1/joystick
 ```
