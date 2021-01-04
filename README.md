@@ -1,5 +1,6 @@
 # Joystick-like selection component
 
+##npm:
 ```bash
-npm install @mazi1/joystick
+npm i @mazi1/joystick
 ```
