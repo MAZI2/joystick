@@ -7,16 +7,12 @@ npm i @mazi1/joystick
 ```
 ## Usage
 ```js
-import Joystick from '@mazi1/joystick'
-```
-
-```js
 <template>
   <Joystick></Joystick>
 </template>
 
 <script>
-import Joystick from './components/Joystick'
+import Joystick from '@mazi1/joystick'
 
 export default {
   name: 'App',
@@ -29,12 +25,12 @@ export default {
 
 ## Documentation
 Use properties to define:
-- number of entries/points (number_of_points) 
-- color (color) 
-- distance from points to joystick (width_points_circle) 
-- width of joystick (circle_width)
-- font size (font_size)
-- properties of entries (entry_props) *must be passed in as array of objects with value and link property (optional)
+- number of entries/points (_number_of_points_) 
+- color (_color_) 
+- distance from points to joystick (_width_points_circle_) 
+- width of joystick (_circle_width_)
+- font size (_font_size_)
+- properties of entries (_entry_props_) __*must be passed in as array of objects with value and link property (optional)__
 
 ```js
 <template>
