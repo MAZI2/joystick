@@ -1,6 +1,6 @@
 <template>
   <div id="dJ" class="draggable-joystick" @mousedown="startDrag" @mouseup="stopDrag" @mousemove="move" >
-    <svg class="bezier" width = "500px" height = "500px">
+    <svg id="bruh" width = "500px" height = "500px">
       <path :d="bezierPath" :fill="color" :visibility="intccl1"/>
       <path :d="bezierPath1" :fill="color" :visibility="intccl1"/>
       <path :d="circle" :fill="color" />
@@ -15,13 +15,14 @@
     </svg>
   
   <p>Selected:</p>
-  {{left}}
+  {{selected}}
   
   </div>
 </template>
 
 <script>
 import dynamics from 'dynamics.js'
+import $ from 'jquery'
 
 //number of entries
 var num = 6;
@@ -130,16 +131,12 @@ export default {
 
     const: function () { return Math.sqrt(Math.pow(this.width, 2)/(Math.pow((this.nx), 2) + Math.pow((this.ny), 2))) },
     k: function () { return 0.011045694996616 * 50 },
-
-    //component position cursor correction
-    top: function () { return 0},
-    left: function () { return 0}
   },
   methods: {
     move: function (e) {   
 
-      this.x2 = e.clientX + this.distanceX - this.left - 50;
-      this.y2 = e.clientY + this.distanceY - this.top - 50; 
+      this.x2 = e.clientX + this.distanceX - $('svg').offset().left;
+      this.y2 = e.clientY + this.distanceY - $('svg').offset().top ; 
 
       if (this.dragging && !this.lock) { 
         //initial visibility
@@ -285,13 +282,9 @@ export default {
 
 <style>
 div {
-  padding-left: 50px;
+  padding-left: 100px;
   height: 600px;
   width: 600px;
   font-family: 'B612';
-}
-.bezier {
-  padding-top: 50px;
-  padding-left: 50px;
 }
 </style>
