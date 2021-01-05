@@ -1,5 +1,5 @@
 <template>
-  <div @mousedown="startDrag" @mouseup="stopDrag" @mousemove="move" >
+  <div id="joystick" @mousedown="startDrag" @mouseup="stopDrag" @mousemove="move" >
     <svg>
       <path :d="bezierPath" :fill="color" :visibility="intccl1"/>
       <path :d="bezierPath1" :fill="color" :visibility="intccl1"/>
@@ -42,13 +42,18 @@ export default {
   name: 'Joystick',
 
   created () {      
-    for (var i = 0; i < this.number_of_points; i++) {
-      this.entries[i] = new Dot(this.x1, this.y1, this.number_of_points, this.width_points_circle)
-      this.entries[i].value = this.entry_props[i].value;
-      this.entries[i].linkurl = this.entry_props[i].linkurl;
+    var circleWidth = this.circle_width;
+    var fontSize = this.font_size;
+
+    if(this.number_of_points <= 6) {
+      for (var i = 0; i < this.number_of_points; i++) {
+        this.entries[i] = new Dot(this.x1, this.y1, this.number_of_points, this.width_points_circle)
+        this.entries[i].value = this.entry_props[i].value;
+        this.entries[i].linkurl = this.entry_props[i].linkurl;
+      }
+    } else {
+      setTimeout(() => {document.getElementById('joystick').innerHTML = "You must provide entry properties"}, 0)
     }
-    var circleWidth = this.circle_width
-    var fontSize = this.font_size
 
     dynamics.animate(this, {
       width: circleWidth,
@@ -65,16 +70,42 @@ export default {
     window.removeEventListener('scroll', this.scrolldistance);
   },
   props: {
-    number_of_points: Number,
-    color: String,
-    width_points_circle: Number,
-    entry_props: Array,
-    circle_width: Number,
-    font_size: Number
+    number_of_points: {
+      type: Number,
+      default: 6
+    },
+    color: {
+      type: String,
+      default: '#ff9933'
+    },
+    width_points_circle: { 
+      type: Number,
+      default: 200
+    },
+    entry_props: {
+      type: Array,
+      default: function() {
+        var arr = [];
+        for(var i = 0; i < 6; i++) {
+          arr.push({value: "placeholder"});
+        }
+        return arr;
+      }
+    },
+    circle_width: {
+      type: Number,
+      default: 50
+    },
+    font_size: {
+      type: Number,
+      default: 18
+    }
   },
   data: function () {
     return {
-      status: "",
+      //set to 0 for initial animation
+      fontSize: 0,
+      width: 0,
 
       dragging: false,
       intccl: 'visible',
@@ -85,17 +116,14 @@ export default {
       //center circle
       x1: 250,
       y1: 250,
-      width: 0,
       //side circle point
       X: 250,
       Y: 250,
 
       entries: [],
-
       selection: 0,
       selected: '',
 
-      fontSize: 0,
       angle: 0,
       A: {x: 0, y: 0},
       B: {x: 0, y: 0},
@@ -131,69 +159,6 @@ export default {
     k: function () { return 0.011045694996616 * 50 },
   },
   methods: {
-    move: function (e) {   
-
-      this.x2 = e.clientX + this.scrollDistanceX - $('svg').offset().left;
-      this.y2 = e.clientY + this.scrollDistanceY - $('svg').offset().top ; 
-
-      if (this.dragging && !this.lock) { 
-        //initial visibility
-        this.intccl1 = 'visible'
-       
-        this.X = this.ny * this.const + this.x1;
-        this.Y = -this.nx * this.const + this.y1;
-      
-        //dragging length
-        var long = Math.pow(Math.max(Math.sqrt(Math.pow((this.nx), 2) + Math.pow((this.ny), 2)) - this.len, 0), 0.9)
-        //lenght after aplying some modifyers
-        this.leng = long*(long/500) < long/2 || long == 0 ? long - long*(long/500) : 125
-
-        //control point top
-        this.c.c3x = this.nx * (this.const + Math.sqrt((this.leng*this.leng) / (this.nx*this.nx + this.ny*this.ny))) + this.x1
-        this.c.c3y = this.ny * (this.const + Math.sqrt((this.leng*this.leng) / (this.nx*this.nx + this.ny*this.ny))) + this.y1               
-        //control point bezier 1.1                
-        this.c1.c1x = this.nx * this.const * this.k + this.X
-        this.c1.c1y = this.ny * this.const * this.k + this.Y
-        //control point bezier 1.2
-        this.c.c2x = (this.X - this.x1) * this.k + this.c.c3x
-        this.c.c2y = (this.Y - this.y1) * this.k + this.c.c3y
-        //control point bezier 2.1
-        this.c1.c4x = this.nx * this.const * this.k + this.Xs
-        this.c1.c4y = this.ny * this.const * this.k + this.Ys
-        //control point bezier 2.2
-        this.c.c5x = -(this.X - this.x1) * this.k + this.c.c3x
-        this.c.c5y = -(this.Y - this.y1) * this.k + this.c.c3y
-        
-        //stop drag if dragging more than 250
-        if (Math.sqrt(Math.pow((this.nx), 2) + Math.pow((this.ny), 2)) > 250) {
-          this.stopDrag()
-        }
-
-        for (var i = 0; i < this.number_of_points; i++) {
-          var x = this.entries[i].x + this.entries[i].y - this.y1
-          var y = this.entries[i].y - this.entries[i].x + this.x1
-      
-          var distance1 = Math.abs((y - this.entries[i].y)*this.c.c3x - (x - this.entries[i].x)*this.c.c3y + x*this.entries[i].y - y*this.entries[i].x) / Math.sqrt(Math.pow(y - this.entries[i].y, 2) + Math.pow(x - this.entries[i].x, 2))
-
-          if (distance1 <= this.width_points_circle + 5) {
-            var distance = Math.abs((this.entries[i].y - this.y1)*this.c.c3x - (this.entries[i].x - this.x1)*this.c.c3y + this.entries[i].x*this.y1 - this.entries[i].y*this.x1) / Math.sqrt(Math.pow(this.entries[i].y - this.y1, 2) + Math.pow(this.entries[i].x - this.x1, 2))
-            this.entries[i].r = this.leng / 2 / Math.max(distance/40, 1) 
-          } else {
-            this.entries[i].r = 0
-          } 
-
-          this.entries[i].opacity = this.entries[i].r/this.width
-        }   
-      }
-      this.status = this.number_of_points;
-    },
-    findAngle: function(A,B,C) {
-      var AB = Math.sqrt(Math.pow(B.x-A.x,2)+ Math.pow(B.y-A.y,2));    
-      var BC = Math.sqrt(Math.pow(B.x-C.x,2)+ Math.pow(B.y-C.y,2)); 
-      var AC = Math.sqrt(Math.pow(C.x-A.x,2)+ Math.pow(C.y-A.y,2));
-      
-      return Math.acos((BC*BC+AB*AB-AC*AC)/(2*BC*AB));
-    },
     startDrag: function () {
       this.len = Math.sqrt(Math.pow((this.nx), 2) + Math.pow((this.ny), 2))
 
@@ -263,6 +228,69 @@ export default {
       } else if (this.leng < 0.1) {
         this.dragging = false
       }
+    },
+    move: function (e) {
+      if(this.number_of_points <= 6) {
+        this.x2 = e.clientX + this.scrollDistanceX - $('svg').offset().left;
+        this.y2 = e.clientY + this.scrollDistanceY - $('svg').offset().top ; 
+      }
+
+      if (this.dragging && !this.lock) {        
+        //initial visibility
+        this.intccl1 = 'visible'
+       
+        this.X = this.ny * this.const + this.x1;
+        this.Y = -this.nx * this.const + this.y1;
+      
+        //dragging length
+        var long = Math.pow(Math.max(Math.sqrt(Math.pow((this.nx), 2) + Math.pow((this.ny), 2)) - this.len, 0), 0.9)
+        //lenght after aplying some modifyers
+        this.leng = long*(long/500) < long/2 || long == 0 ? long - long*(long/500) : 125
+
+        //control point top
+        this.c.c3x = this.nx * (this.const + Math.sqrt((this.leng*this.leng) / (this.nx*this.nx + this.ny*this.ny))) + this.x1
+        this.c.c3y = this.ny * (this.const + Math.sqrt((this.leng*this.leng) / (this.nx*this.nx + this.ny*this.ny))) + this.y1               
+        //control point bezier 1.1                
+        this.c1.c1x = this.nx * this.const * this.k + this.X
+        this.c1.c1y = this.ny * this.const * this.k + this.Y
+        //control point bezier 1.2
+        this.c.c2x = (this.X - this.x1) * this.k + this.c.c3x
+        this.c.c2y = (this.Y - this.y1) * this.k + this.c.c3y
+        //control point bezier 2.1
+        this.c1.c4x = this.nx * this.const * this.k + this.Xs
+        this.c1.c4y = this.ny * this.const * this.k + this.Ys
+        //control point bezier 2.2
+        this.c.c5x = -(this.X - this.x1) * this.k + this.c.c3x
+        this.c.c5y = -(this.Y - this.y1) * this.k + this.c.c3y
+        
+        //stop drag if dragging more than 250
+        if (Math.sqrt(Math.pow((this.nx), 2) + Math.pow((this.ny), 2)) > 250) {
+          this.stopDrag()
+        }
+
+        for (var i = 0; i < this.number_of_points; i++) {
+          var x = this.entries[i].x + this.entries[i].y - this.y1
+          var y = this.entries[i].y - this.entries[i].x + this.x1
+      
+          var distance1 = Math.abs((y - this.entries[i].y)*this.c.c3x - (x - this.entries[i].x)*this.c.c3y + x*this.entries[i].y - y*this.entries[i].x) / Math.sqrt(Math.pow(y - this.entries[i].y, 2) + Math.pow(x - this.entries[i].x, 2))
+
+          if (distance1 <= this.width_points_circle + 5) {
+            var distance = Math.abs((this.entries[i].y - this.y1)*this.c.c3x - (this.entries[i].x - this.x1)*this.c.c3y + this.entries[i].x*this.y1 - this.entries[i].y*this.x1) / Math.sqrt(Math.pow(this.entries[i].y - this.y1, 2) + Math.pow(this.entries[i].x - this.x1, 2))
+            this.entries[i].r = this.leng / 2 / Math.max(distance/40, 1) 
+          } else {
+            this.entries[i].r = 0
+          } 
+
+          this.entries[i].opacity = this.entries[i].r/this.width
+        }   
+      }
+    },
+    findAngle: function(A,B,C) {
+      var AB = Math.sqrt(Math.pow(B.x-A.x,2)+ Math.pow(B.y-A.y,2));    
+      var BC = Math.sqrt(Math.pow(B.x-C.x,2)+ Math.pow(B.y-C.y,2)); 
+      var AC = Math.sqrt(Math.pow(C.x-A.x,2)+ Math.pow(C.y-A.y,2));
+      
+      return Math.acos((BC*BC+AB*AB-AC*AC)/(2*BC*AB));
     },
     scrolldistance: function() { 
     //scroll offset correction
